@@ -320,7 +320,6 @@ Be aware that, busybox tries to imitate popular feature extensions from GNU's im
     ...
     nobody
 
-
     # Print the first 5 characters of each line of /etc/passwd
     > cut -c 1-5 /etc/passwd
     root:
