@@ -1477,47 +1477,287 @@ Be aware that, busybox tries to imitate popular feature extensions from GNU's im
     (parent directory a no longer exists)
 
 ### rmmod
+    # Wait for a kernel module to become unused and then forcibly unload it
+    > rmmod -w -f drm
+    rmmod: can't unload module 'drm': Operation not permitted
+
 ### route
+    # Print kernel IP routing table with extra info, and do not resolve names.
+    > route -e -n
+    Destination     Gateway         Genmask         Flags   MSS Window  irtt Iface
+    0.0.0.0         172.17.0.1      0.0.0.0         UG        0 0          0 eth0
+    172.17.0.0      0.0.0.0         255.255.0.0     U         0 0          0 eth0
+
 ### run-parts
+    # Glob and run executable scripts underneath a directory, pass argument "haha" to them.
+    > mkdir -p scripts
+    > echo -e '#!/bin/sh\necho script 1 arg $1' > scripts/a1
+    > echo -e '#!/bin/sh\necho script 2 arg $1' > scripts/a2
+    > chmod -R 755 scripts
+    > run-parts -a haha script
+    script 1 arg haha
+    script 2 arg haha
+
 ### sed
+    # Use POSIX basic regex - the original grep flavour
+    # Basic regex requires all meta characters (except .) to be escaped with a backslash
+    > echo 'abc123' | sed 's/[1-3]\{1,3\}y\?/Z/'
+    abcZ
+
+    # Use POSIX extended regex
+    > echo 'abc123' | sed -E 's/[1-3]{1,3}y?/Z/'
+    abcZ
+
 ### sendmail
+    # Send a mail using SMTP server on the container's host
+    > echo -e 'From: from@example.com\r\n\r\nThis Is A Message' | sendmail -S 172.17.0.1:25 -w 5 -f from@example.com -t to@example.com -v
+    sendmail: recv:'220 ard.how houzuo.net howard.gg hz.gl ESMTP'
+    sendmail: send:'EHLO de06b04310d2'
+    sendmail: recv:'250-ard.how houzuo.net howard.gg hz.gl'
+    ...
+    sendmail: send:'MAIL FROM:<from@example.com>'
+    sendmail: recv:'250 2.1.0 OK'
+    ...
+    sendmail: send:'RCPT TO:<to@example.com>'
+    sendmail: recv:'550 Bad address'
+    ...
+    sendmail: send:'QUIT'
+    
 ### seq
+    # Generate an integer sequence, useful for shell programming.
+    > for i in $(seq 1 5); do echo $i; done
+    1
+    2
+    3
+    4
+    5
+
 ### setconsole
+    # Ask everything written to /dev/console to be copied to /dev/pts/0
+    > setconsole /dev/pts/0
+    setconsole: ioctl 0x541d failed: Operation not permitted
+
 ### setfont
+    # Load a console font
+
 ### setkeycodes
+    # Modify kernel's mapping between key scan codes to key codes.
+
 ### setlogcons
+    # Ask kernel output to be printed to VT console 2
+    > setlogcons 2
+    setlogcons: can't open '/dev/tty2': No such file or directory
+
 ### setpriv
+    # Print privilege of the invoking process
+    > setpriv -d
+    uid: 0
+    ...
+    gid: 0
+    ...
+    Inheritable capabilities: chown ...
+    Ambient capabilities: [none]
+    Capability bounding set: chown ...
+    
+    # busybox setpriv is not particularly easy to use, it is missing many of the features (e.g. specifying capability -all,+chown) supported by fully featured setpriv.
+
 ### setserial
+    # Print or set serial port parameters
+
 ### setsid
+    # Make sure a program won't get keyboard signals from the controlling terminal
+    > sleep 1000 &
+    > setsid sleep 1234
+    > ps -T -o pid,ppid,sid,user,group,tty,nice,args
+    PID   PPID  SID   USER     GROUP    TT     NI    COMMAND
+    1     0     1 root     root     136,0      0 /bin/sh
+    6     1     1 root     root     136,0      0 sleep 1000
+    8     1     8 root     root     ?          0 sleep 1234
+
 ### sh
+    # The shell interpreter
+    > sh -x -e -u -c 'echo $0 $1 $2' a b c
+    + echo a b c
+    a b c
+
 ### sha1sum
+    # Calculate SHA-1 checksum
+    > echo -n '' | sha1sum
+    da39a3ee5e6b4b0d3255bfef95601890afd80709  -
+
 ### sha256sum
+    # Calculate SHA-2 256-bit checksum
+    > echo -n '' | sha256sum
+    e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  -
+    
 ### sha3sum
+    # Calculate SHA-3 256-bit checksum
+    > echo -n '' | sha3sum -a 256
+    a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a  -
+
 ### sha512sum
+    # Calculate SHA-2 512-bit checksum
+    echo -n '' | sha512sum
+    cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e  -
+
 ### showkey
+    # Show the interpreted keycodes for keys pressed in the VT
+    > showkey
+
 ### shred
+    # Shred a file by overwriting it with random data 3 times, then overwriting it with zero, and finally deleting it.
+    > shred -n 3 -z -u /etc/os-release
+
 ### shuf
+    # Get three numbers from a shuffled range of 1 to 10 inclusive
+    > shuf -n 3 -e $(seq 1 10)
+
 ### slattach
+    # Configure serial line as SLIP networking interface hehehehe
+
 ### sleep
-### smemcap
+    # Sleep for 0.1 minutes (6 seconds)
+    > sleep 0.1m
+
 ### sort
+    # Sort lines in /etc/os-release, ignore leading blank, ignore case, sort numbers too.
+    > sort -b -f -n /etc/os-release
+    BUG_REPORT_URL="https://bugs.alpinelinux.org/"
+    HOME_URL="https://alpinelinux.org/"
+    ID=alpine
+    NAME="Alpine Linux"
+    PRETTY_NAME="Alpine Linux v3.13"
+    VERSION_ID=3.13.0
+    
+    # A convuluted way to grab 3 random lines from /etc/os-release, demonstrating sorting by a file by field selection.
+    > wc -l /etc/os-release
+    6
+    > echo "$(shuf -e $(seq 1 6))" | paste -d '#' /etc/os-release - | sort -n -t '#' -k 2 | head -n 3 | sed -E 's/^(.*)#.*$/\1/'
+
 ### split
+    # Split a file into chunks of two lines each
+    > split -l 2 /etc/os-release split-part-
+    > ls
+    split-part-aa  split-part-ab  split-part-ac
+
 ### stat
+    # Print the status of file
+    > stat /etc/os-release
+      File: /etc/os-release
+      Size: 164             Blocks: 8          IO Block: 4096   regular file
+      ...
+    
+    # Print the status of the file system containing the file
+    > stat -f /etc/os-release
+      File: "/etc/os-release"
+      ID: 6dcd663b9be28281 Namelen: 255     Type: UNKNOWN
+      Block size: 4096
+      Blocks: Total: 10148403   Free: 3175797    Available: 3171701
+
 ### strings
+    # Print text strings (minimum 4 characters per string), along with file name and offset in hex numbers.
+    > strings -f -o -t x /etc/os-release
+    /etc/os-release:       0 NAME="Alpine Linux"
+    /etc/os-release:      14 ID=alpine
+    /etc/os-release:      1e VERSION_ID=3.13.0
+    
 ### stty
+    # Display or set TTY parameters
+    > stty size
+    41 94
+
 ### su
+    # Run shell interpreter under user "nobody", give the shell "id" command to run, and then return to original user.
+    > su -s /bin/sh -l nobody -c 'id'
+    uid=65534(nobody) gid=65534(nobody) groups=65534(nobody)
+    (and now back to original user's shell prompt)
+
 ### sum
+    # Print the checksum ("BSD sum algorithm", 1K block size) and the number of blocks a file occupies
+    > sum /etc/os-release
+    50215     1
+
 ### swapoff
+    # Turn off all swap block devices
+    > swapoff -a
+    
 ### swapon
+    # Turn on a swap block device, give it the priority 32767 (highest priority)
+    > swapon -p 32767 /swapfile
+
 ### switch_root
+    # Free initramfs and switch to another root fs
+
 ### sync
+    # Sync disk-backed memory buffer to disk for all files
+    > sync
+    
+    # Sync disk-backed memory buffer to disk for a specific file
+    > sync /etc/os-release
+
 ### sysctl
+    # Get kernel parameter by key name
+    > sysctl -n net.ipv4.ping_group_range
+    1       0
+
 ### syslogd
+    # Run syslog daemon, keep messages in /messages file.
+    > syslogd -O /messages
+    > logger haha
+    > cat /messages
+    Jan 29 10:14:32 1f49bcb3aafb syslog.info syslogd started: BusyBox v1.32.1
+    Jan 29 10:14:36 1f49bcb3aafb user.notice root: haha
+
 ### tac
+    # Print a file backwards
+    > tac /etc/os-release
+    BUG_REPORT_URL="https://bugs.alpinelinux.org/"
+    HOME_URL="https://alpinelinux.org/"
+    PRETTY_NAME="Alpine Linux v3.13"
+
 ### tail
+    # Print the last 2 lines of /etc/os-release
+    > tail -n 2 /etc/os-release
+    HOME_URL="https://alpinelinux.org/"
+    BUG_REPORT_URL="https://bugs.alpinelinux.org/"
+
+    # Print the last 20 bytes of /etc/os-release
+    > tail -c 20 /etc/os-release
+    s.alpinelinux.org/"
+    
+    # Print the line after the 3rd line
+    > tail -n 3 /etc/os-release | head -n 1
+    PRETTY_NAME="Alpine Linux v3.13"
+
 ### tar
+    # Create an archive
+    > tar zcvf etc.tgz /etc/os-release  /etc/shells
+    tar: removing leading '/' from member names
+    etc/os-release
+    etc/shells
+    
+    # Display content of the archive
+    > tar tf etc.tgz
+    etc/os-release
+    etc/shells
+    
+    # Extract the archive
+    > mv etc.tgz /tmp
+
 ### tee
+    # Copy standard input to standard output and append to file
+    > cat /etc/os-release | tee -a copy-of-output
+    NAME="Alpine Linux"
+    ...
+    > cat copy-of-output
+    NAME="Alpine Linux"
+    ...
+
 ### test
+    # Test whether a path is a readable file
+    > test -r /etc/os-release -a -f /etc/os-release && echo good
+    good
+
 ### time
 ### timeout
 ### top
