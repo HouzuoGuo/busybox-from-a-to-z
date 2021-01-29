@@ -1150,51 +1150,332 @@ Be aware that, busybox tries to imitate popular feature extensions from GNU's im
          6  BUG_REPORT_URL="https://bugs.alpinelinux.org/"
 
 ### nmeter
+    # At interval of one second, print several key system stats
+    > nmeter -d 1000 'IRQ rate %i Ctx switch %x Forks %p block IO %b'
+    IRQ rate  208 Ctx switch  392 Forks    2 block IO    0  24k
+    IRQ rate  319 Ctx switch  757 Forks   49 block IO    0    0
+    IRQ rate  177 Ctx switch  390 Forks    0 block IO    0 192k
+
 ### nohup
+    # Run a program and make it immune to terminal hangup (SIGHUP)
+    > nohup yes &>/dev/null &
+
 ### nologin
+    # Inform logged-in user that shell is not available for this user
+    > nologin
+    This account is not available
+    (and hangs there)
+
 ### nproc
+    # Print the number of available CPUs
+    > nproc --all
+    2
+    
 ### nsenter
+    # Do this exercise outside of alpine container.
+    # Create a new user namespace
+    > unshare -r -p --fork --mount-proc
+    # In another shell of the logon user, print a list of all namespaces.
+    > lsns
+    # Identify the process ID of the newly created user namespace and enter it
+    > sudo nsenter --all --target 625537
+    
 ### nslookup
+    # Look up the A records of a DNS name
+    > nslookup -type=a hz.gl
+    Server:         9.9.9.9
+    Address:        9.9.9.9:53
+    Non-authoritative answer:
+    Name:   hz.gl
+    Address: 13.48.0.5
+    
+    # Look up the TXT records of a DNS name
+    > nslookup -type txt hz.gl
+    Server:         9.9.9.9
+    Address:        9.9.9.9:53
+    Non-authoritative answer:
+    hz.gl   text = "v=spf1 mx a mx:hz.gl mx:howard.gg mx:houzuo.net mx:ard.how ?all"
+    ...
+
 ### ntpd
+    # Synchronise system clock with an NTP server
+    # (verbose, do not daemonize, quit after setting clock, peer server name)
+    > ntpd -d -n -q -p ca.pool.ntp.org
+    ntpd: 'ca.pool.ntp.org' is 209.115.181.113
+    ntpd: sending query to 209.115.181.113
+    ntpd: reply from 209.115.181.113: offset:-0.008284 delay:0.165039 status:0x24 strat:2 refid:0x83006cce rootdelay:0.035508 reach:0x01 
+
 ### od
+    # Print printable characters and escape sequences of the standard input
+    > echo 'haha' od --format c -
+    0000000   h   a   h   a  \n
+    0000005
+
 ### openvt
+    # Start a program on a new virtual terminal
+    > openvt -c 1 -s -w
+    can't find open VT (hehe)
+    
 ### partprobe
+    # Ask kernel to rescan partition table
+    > partprobe
+
 ### passwd
+    # Lock and disable a user account
+    > passwd -l root
+
 ### paste
+    # Paste lines from each input file, separated by a comma.
+    > paste -d ',' /etc/os-release /etc/os-release
+    NAME="Alpine Linux",NAME="Alpine Linux"
+    ID=alpine,ID=alpine
+    ...
+    
 ### pgrep
+    # Find the newest PID from sleep process
+    > sleep 1000 &
+    > pgrep -n sleep
+    124
+    
+    # Find the newest PID from a process that mentions "1000" in its command line
+    > pgrep -n -f 1000
+    124
+
 ### pidof
+    # Find exactly one process that runs the sleep program
+    > sleep 1000 &
+    > pidof sleep
+    133
+
 ### ping
+    # Send exactly one ping request to hz.gl
+    > ping -c 1 hz.gl
+    PING hz.gl (13.48.0.5): 56 data bytes
+    ...
+    1 packets transmitted, 1 packets received, 0% packet loss
+    ...
+
 ### ping6
+    # Send exactly one ICMPv6 ping request to localhost
+    > ping6 -c 1 ::1
+    PING ::1(::1) 56 data bytes
+    ...
+    1 packets transmitted, 1 received, 0% packet loss, time 0ms
+    
 ### pipe_progress
+    # Print a dot every second while a program is running
+    > sh -c "while IFS='' read -d $'\n' line; do echo \$line; sleep 1; done < /etc/os-release" | pipe_progress
+    NAME="Alpine Linux"
+    .ID=alpine
+    .VERSION_ID=3.13.0
+    .PRETTY_NAME="Alpine Linux v3.13"
+    (and so on)
+    
 ### pivot_root
+    # move the current root file system to ... what?!
+
 ### pkill
+    # Similar to pgrep, kill the sleep program by matching its command line.
+    > sleep 1000 &
+    > pkill -KILL -f 1000
+    [1]+  Killed                     sleep 1000
+
 ### pmap
+    # Display the memory mapping of a process
+    > pmap -x 1
+    Address           Kbytes     PSS   Dirty    Swap  Mode  Mapping
+    0000564b38826000      48       0       0       0  r--p  /bin/busybox
+    0000564b38832000     612     214       0       0  r-xp  /bin/busybox
+    ...
+    0000564b39904000       4       0       0       0  ---p  [heap]
+    0000564b39905000       4       4       4       0  rw-p  [heap]
+    ...
+    00007ffdcc1d9000     132       8       8       4  rw-p  [stack]
+    ...
+    ----------------  ------  ------  ------  ------
+    total               1700     632     136      20
+    
+
 ### poweroff
-### powertop
+    # Poweroff the computer in two seconds, do not sync, do not go through init.
+    > poweroff -d 2 -n -f
+
 ### printenv
+    # Print an environment variable by name
+    > printenv HOME
+    /root
+
 ### printf
+    # Print right-justified text using minimum field width of 5
+    > printf '|%5s|%5d|\n' adam 123
+    | adam|  123|
+    > printf '|%5s|%5d|\n' adamandeve 12345678
+    |adamandeve|12345678|
+    
+    # Print left-justified text using minimum field width of 5
+    > printf '|%-5s|%-5d|\n' adam 123
+    |adam |123  |
+    > printf '|%-5s|%-5d|\n' adamandeve 12345678
+    |adamandeve|12345678|
+    
+    # Print with "precision" - max length for a string, min length for an integer.
+    > printf '|%.5s|%.5d|\n' adam 123
+    |adam|00123|
+    > printf '|%.5s|%.5d|\n' adamandeve 12345678
+    |adama|12345678|
+    
 ### ps
+    # Print information about processes and threads
+    > ps -T -o pid,ppid,pgid,sid,user,group,tty,args
+    PID   PPID  PGID  SID   USER     GROUP    TT     COMMAND
+    1     0     1     1     root     root     136,0  /bin/sh
+    193   1     193   1     root     root     136,0  ps -T -o pid,ppid,pgid,sid,user,group,tty,ar
+
 ### pscan
+    # Scan for open ports between 1 and 100, using a timeout of 100ms, and display closed/blocked ports too.
+    > pscan -p 1 -P 100 -t 100 -b -c hz.gl
+    Scanning hz.gl ports 1 to 100
+     Port   Proto   State   Service
+        1   tcp     open    tcpmux
+        2   tcp     blocked unknown
+        ...
+        7   tcp     blocked echo
+        8   tcp     blocked unknown
+        9   tcp     blocked discard
+       10   tcp     blocked unknown
+       11   tcp     open    systat
+       12   tcp     blocked unknown
+       ...
+       22   tcp     open    ssh
+       23   tcp     open    telnet
+       ...
+       53   tcp     open    domain
+       ...
+       80   tcp     open    http
+       ...
+       99   tcp     blocked unknown
+      100   tcp     blocked unknown
+    0 closed, 8 open, 92 timed out (or blocked) ports
+    / #
+
 ### pstree
+    # Display process tree along with process PIDs, starting from PID 1
+    > sleep 1000 & pstree -p 1
+    sh(1)-+-pstree(202)
+          `-sleep(201)
+
 ### pwd
+    # Display the logical path of working directory, i.e. with symlink intact and unresolved.
+    > pwd
+    /
+
 ### pwdx
+    # Print the current working directory of a process identified by its PID
+    > cd /etc/ && sleep 100 &
+    > pwdx $(pgrep -n sleep)
+    209: /etc
+
 ### raidautorun
+    # Tell the kernel to automatically search and start RAID arrays
+    
 ### rdate
+    # Print or set system clock on a remote computer
+
 ### rdev
+    # Print the device node associated with the filesystem mounted at /
+
 ### readahead
+    # Preload a file into memory cache
+    > dd if=/dev/urandom of=./largefile bs=1M count=400
+    400+0 records out
+    > sudo sysctl -w vm.drop_caches=3 # execute on container host
+    vm.drop_caches = 3
+    > free -m
+    total        used        free      shared  buff/cache   available
+    Mem:            953         464         186           0         302         366
+    Swap:          2047         177        1870
+    > readahead ./largefile
+    > free -m
+    total        used        free      shared  buff/cache   available
+    Mem:            953         463         185           0         304         367
+    Swap:          2047         177        1870
+    # Apparently readahead preloaded the first 2 MB of the file
+
 ### readlink
-### readprofile
+    # Resolve all symlinks to discover the absolute path to a file
+    > ln -sf /etc/passwd /tmp/hahapass
+    > readlink -f /tmp/../tmp/hahapass
+    /etc/passwd
+
 ### realpath
+    # Resolve all symlinks to discover the absolute path to a file, similar to readlink.
+    > ln -sf /etc/passwd /tmp/hahapass
+    > realpath /tmp/../tmp/hahapass
+    /etc/passwd
+
 ### reboot
+    # Reboot the computer in two seconds, do not sync, do not go through init.
+    > poweroff -d 2 -n -f
+    reboot: (null): Operation not permitted
+
 ### reformime
+    # Extract content of an MIME section (does not appear to work)
+    > makemime /etc/os-release | reformime
+    (empty output)
+
 ### remove-shell
+    # Remove a shell from /etc/shells
+    > remove-shell /bin/ash
+    > cat /etc/shells
+    /bin/sh
+
 ### renice
+    # Change the scheduling priority of a live process
+    > sleep 1000 &
+    > ps -T -o pid,ppid,user,group,tty,nice,args
+     PID   PPID  USER     GROUP    TT     NI    COMMAND
+      308     1  root     root     136,0      0 sleep 1000
+    > renice 17 -g 308 # the ceiling of priority number only goes to 19 (lowest priority)
+    > ps -T -o pid,ppid,user,group,tty,nice,args
+     PID   PPID  USER     GROUP    TT     NI    COMMAND
+      308     1  root     root     136,0     17 sleep 1000
+
 ### reset
+    # Reset the TTY
+    > reset
+    (no output)
+
 ### resize
+    # Determine the current TTY size and print shell statements that export COLUMNS and LINES
+    > eval $(resize)
+    > printenv COLUMNS LINES
+    94
+    41
+    
 ### rev
+    # Reverse the characters on each line of file
+    > rev /etc/os-release
+    "xuniL eniplA"=EMAN
+    enipla=DI
+    0.31.3=DI_NOISREV
+    "31.3v xuniL eniplA"=EMAN_YTTERP
+    "/gro.xunilenipla//:sptth"=LRU_EMOH
+    "/gro.xunilenipla.sgub//:sptth"=LRU_TROPER_GUB
+    
 ### rfkill
+    # Enable/disable wireless devices
+    > rfkill list all
+    rfkill: /dev/rfkill: No such file or directory
+
 ### rm
+    # Remove (unlink) files and directories (hehe surely I don't need an example here)
+
 ### rmdir
+    # Remove empty directories, including the empty parent directories
+    > mkdir -p a/b/c
+    > rmdir -p a/b/c
+    (parent directory a no longer exists)
+
 ### rmmod
 ### route
 ### run-parts
